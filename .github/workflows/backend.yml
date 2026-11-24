@@ -149,16 +149,18 @@ jobs:
           NEEDRESTART_MODE: l
         run: |
           mkdir -p ~/openvpn-debs
-          sudo chown -R _apt:root ~/openvpn-debs
 
           if [ "${{ steps.cache-openvpn.outputs.cache-hit }}" == "true" ]; then
             echo "Installing OpenVPN from cache..."
             sudo -E dpkg -i ~/openvpn-debs/*.deb || (sudo apt-get update -qq && sudo -E apt-get install -f -y -qq)
           else
             echo "Downloading and caching OpenVPN..."
+            sudo chown -R _apt:root ~/openvpn-debs
             sudo apt-get update -qq
             sudo -E apt-get install -y -qq --no-install-recommends \
               -o dir::cache::archives="$HOME/openvpn-debs" openvpn
+            sudo rm -rf ~/openvpn-debs/lock ~/openvpn-debs/partial
+            sudo chown -R "$(id -u):$(id -g)" ~/openvpn-debs
           fi
 
           printf "%s" "$VPN_CONFIG_BASE64" | tr -d '[:space:]' | base64 -d > /tmp/vpn.ovpn
