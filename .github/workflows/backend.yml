@@ -27,6 +27,25 @@ jobs:
           cache: 'maven'
           cache-dependency-path: api-documentation-generator/pom.xml
 
+      - name: Configure Maven Mirror & Clean Cache Metadata
+        run: |
+          mkdir -p ~/.m2
+          cat << 'EOF' > ~/.m2/settings.xml
+          <settings>
+            <mirrors>
+              <mirror>
+                <id>google-maven-central</id>
+                <name>GCS Maven Central mirror</name>
+                <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                <mirrorOf>central</mirrorOf>
+              </mirror>
+            </mirrors>
+          </settings>
+          EOF
+          if [ -d ~/.m2/repository ]; then
+            find ~/.m2/repository \( -name "_remote.repositories" -o -name "*.lastUpdated" \) -delete
+          fi
+
       - name: Build & Run api-documentation-generator
         working-directory: ./api-documentation-generator
         env:
@@ -34,7 +53,7 @@ jobs:
           PUBLIC_PROJECT_NAME: ${{ vars.PUBLIC_PROJECT_NAME }}
           PUBLIC_SWAGGER_TOKEN: ${{ secrets.PUBLIC_SWAGGER_TOKEN }}
         run: |
-          mvn -B package -DskipTests
+          mvn -B package -DskipTests -Daether.connector.http.retryHandler.count=5
 
           JAR_FILE=$(find target -maxdepth 1 -name "*.jar" ! -name "*original*" | head -n 1)
           java -jar "$JAR_FILE" > /tmp/app.log 2>&1 &
@@ -91,10 +110,29 @@ jobs:
           cache: 'maven'
           cache-dependency-path: liferay-api-analyzer/pom.xml
 
+      - name: Configure Maven Mirror & Clean Cache Metadata
+        run: |
+          mkdir -p ~/.m2
+          cat << 'EOF' > ~/.m2/settings.xml
+          <settings>
+            <mirrors>
+              <mirror>
+                <id>google-maven-central</id>
+                <name>GCS Maven Central mirror</name>
+                <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                <mirrorOf>central</mirrorOf>
+              </mirror>
+            </mirrors>
+          </settings>
+          EOF
+          if [ -d ~/.m2/repository ]; then
+            find ~/.m2/repository \( -name "_remote.repositories" -o -name "*.lastUpdated" \) -delete
+          fi
+
       - name: Build liferay-api-analyzer
         working-directory: ./liferay-api-analyzer
         run: |
-          mvn -B package -DskipTests
+          mvn -B package -DskipTests -Daether.connector.http.retryHandler.count=5
 
       - name: Cache OpenVPN Packages
         id: cache-openvpn
@@ -220,6 +258,25 @@ jobs:
           cache: 'maven'
           cache-dependency-path: source-code-analyzer/pom.xml
 
+      - name: Configure Maven Mirror & Clean Cache Metadata
+        run: |
+          mkdir -p ~/.m2
+          cat << 'EOF' > ~/.m2/settings.xml
+          <settings>
+            <mirrors>
+              <mirror>
+                <id>google-maven-central</id>
+                <name>GCS Maven Central mirror</name>
+                <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+                <mirrorOf>central</mirrorOf>
+              </mirror>
+            </mirrors>
+          </settings>
+          EOF
+          if [ -d ~/.m2/repository ]; then
+            find ~/.m2/repository \( -name "_remote.repositories" -o -name "*.lastUpdated" \) -delete
+          fi
+
       - name: Clone Source Code from Azure DevOps
         env:
           AZURE_USERNAME: ${{ secrets.AZURE_USERNAME }}
@@ -233,7 +290,7 @@ jobs:
       - name: Build & Run source-code-analyzer
         working-directory: ./source-code-analyzer
         run: |
-          mvn -B package -DskipTests
+          mvn -B package -DskipTests -Daether.connector.http.retryHandler.count=5
 
           JAR_FILE=$(find target -maxdepth 1 -name "*.jar" ! -name "*original*" | head -n 1)
           java -jar "$JAR_FILE" > /tmp/app.log 2>&1 &
